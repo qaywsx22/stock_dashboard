@@ -9,6 +9,7 @@
     "default_icon": "img/Chart_Graph_32x28.png",
     "default_popup": "default_popup.html"
   },
+  "options_page": "options.html",
   "permissions": [
     "https://*.dab-bank.de/*"
   ]

@@ -57,12 +57,8 @@ function reqListener () {
 		document.getElementById("resp").value = div.innerHTML;
 		data = extractStockData(div);
 //		list = document.querySelector("#resList");
-		list = document.createElement("div");
 		sc = document.getElementById("ss");
-		list.style.left = "" + sc.offsetLeft + "px";
-		list.style.top = "" + (sc.offsetTop + sc.offsetHeight) + "px";
-		list.id = "popupResList";
-		sc.offsetParent.appendChild(list);
+		list = createPopupResultList(sc);
 		fillResultList(data, list);
 	}
 	else {
@@ -123,20 +119,41 @@ function extractStockData(div) {
 }
 
 function fillResultList(data, list) {
-	var inte, a, li;
+	var inte;
+	var li;
+	var tr;
+	var td;
+	var table;
 	if (data && list) {
+		table = list.getElementsByClassName("prt").item(0);
 		data.forEach(function (elem, ind, arr) {
-//			a = document.createElement("a");
-//			a.setAttribute("href", "https://boerse.dab-bank.de" + elem.detLink);
-			inte = "" + elem.name + " | " + elem.wkn + " | " + elem.isin;
-//			a.innerText = inte;
-			li = document.createElement("li");
-			li.setAttribute("dataInd", ind);
-			li.setAttribute("class", "searchResultItem");
-			li.innerText = inte;
-//			li.appendChild(a);
-			list.appendChild(li);
-			li.addEventListener("click", liOnClick);
+//			inte = "" + elem.name + " | " + elem.wkn + " | " + elem.isin;
+//			li = document.createElement("li");
+//			li.setAttribute("dataInd", ind);
+//			li.setAttribute("class", "searchResultItem");
+//			li.innerText = inte;
+//			list.appendChild(li);
+//			li.addEventListener("click", liOnClick);
+			tr = document.createElement("tr");
+			tr.className = (ind % 2 === 0 ? "even" : "odd");
+			tr.setAttribute("dataInd", ind);
+			// name
+			td = document.createElement("td");
+			td.innerText = elem.name;
+			td.className = "tdname";
+			tr.appendChild(td);
+			// wkn
+			td = document.createElement("td");
+			td.innerText = elem.wkn;
+			td.className = "tdwkn";
+			tr.appendChild(td);
+			// isin
+			td = document.createElement("td");
+			td.innerText = elem.isin;
+			td.className = "tdisin";
+			tr.appendChild(td);
+			tr.addEventListener("click", liOnClick);
+			table.appendChild(tr);
 		});
 	}
 }
@@ -153,10 +170,18 @@ function getDetails(url) {
 }
 
 function detListener() {
-	var list, selEx, sel = getElement(this.responseText, "select#exchangeSelect");
+	var table, tr, cell, list, selEx, sel = getElement(this.responseText, "select#exchangeSelect");
 	if (sel) {
 		selEx = document.querySelector("#exchangeSelect");
 		selEx.innerHTML = sel.innerHTML;
+	}
+	else {
+//		table = getElement(this.responseText, "table#factsheet_prices_table");	
+//		if (table) {
+//			tr = table.getElementsByTagName('tr')[0];
+//			cell = tr.getElementsByClassName("factsheet_price_columnValue").item(0);
+//		}
+		alert("Not imlemented yet");
 	}
 	list = document.querySelector("#popupResList");
 	list.remove();
@@ -164,7 +189,7 @@ function detListener() {
 
 function liOnClick(evt) {
 	var url, ind;
-	ind = parseInt(evt.target.getAttribute("dataInd"));
+	ind = parseInt(evt.currentTarget.getAttribute("dataInd"));
 	if (!isNaN(ind) && ind >= 0 && ind < data.length) {
 		url = "https://boerse.dab-bank.de" + data[ind].detLink;
 		getDetails(url);
@@ -180,5 +205,20 @@ function getElement(htmlText, selector) {
 	return null;
 }
 
-function createPopupResultList() {
+function createPopupResultList(sc) {
+	var table, list = document.createElement("div");
+	list.style.left = "" + sc.offsetLeft + "px";
+	list.style.top = "" + (sc.offsetTop + sc.offsetHeight) + "px";
+	list.id = "popupResList";
+	list.setAttribute("tabindex", "0");
+	table = document.createElement("table");
+	table.className = "prt";
+	list.appendChild(table);
+	sc.offsetParent.appendChild(list);
+	list.addEventListener("keydown", function(evt) {
+		if (evt.keyCode == 27) { // ESC
+			list.remove();
+		}
+	});
+	return list;
 }

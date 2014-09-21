@@ -1,12 +1,13 @@
 var oReq, data;
 
 document.addEventListener("readystatechange", function () {
-	var ss;
+	var el;
 	if (document.readyState ==="complete") {
 		document.getElementById("sb").addEventListener("click", sbOnClick);
-		ss = document.getElementById("ss");
-		ss.addEventListener("keydown", ssOnKeyDown);
-		ss.focus();
+		el = document.getElementById("ss");
+		el.addEventListener("keydown", ssOnKeyDown);
+		el.focus();
+		document.getElementById("add").addEventListener("click", addOnClick);
     }
 });
 
@@ -32,7 +33,6 @@ function searchStock() {
 	if (list) {
 		list.remove();
 	}
-	document.getElementById("resp").value = "";
 	if (stock) {
 		stock = stock.trim();
 		if (stock != "") {
@@ -51,25 +51,17 @@ function searchStock() {
 			oReq.send(params);
 		}
 	}
-	else {
-		document.getElementById("resp").value = "Empty search, nothing found";
-		document.querySelector("#resList").innerHTML = "";
-	}
 }
 
 function reqListener () {
 //	console.log(this.responseText);
 	var sc, list, div, table = getElement(this.responseText, "table#instrument"),
-		list = document.querySelector("#resList"),
-		selEx = document.querySelector("#exchangeSelect");
-	list.innerHTML = "";
+		list, selEx = document.querySelector("#exchangeSelect");
 	selEx.innerHTML = "";
 	if (table != null) {
 		div = document.createElement("div");
 		div.appendChild(table);
-		document.getElementById("resp").value = div.innerHTML;
 		data = extractStockData(div);
-//		list = document.querySelector("#resList");
 		sc = document.getElementById("ss");
 		list = createPopupResultList(sc);
 		fillResultList(data, list);
@@ -184,7 +176,8 @@ function getDetails(url) {
 }
 
 function detListener() {
-	var ss, table, tr, cell, list, selEx, sel = getElement(this.responseText, "select#exchangeSelect");
+	var table, tr, cell, list, selEx, sel = getElement(this.responseText, "select#exchangeSelect");
+	var ss = document.querySelector("#ss");
 	if (sel) {
 		selEx = document.querySelector("#exchangeSelect");
 		selEx.innerHTML = sel.innerHTML;
@@ -197,7 +190,6 @@ function detListener() {
 //			cell = tr.getElementsByClassName("factsheet_price_columnValue").item(0);
 //		}
 		alert("Not imlemented yet");
-		ss = document.querySelector("#ss");
 		ss.focus();
 	}
 	list = document.querySelector("#popupResList");
@@ -205,9 +197,13 @@ function detListener() {
 }
 
 function liOnClick(evt) {
-	var url, ind;
-	ind = parseInt(evt.currentTarget.getAttribute("dataInd"));
+	var url, ind, tr, tdname, ss;
+	tr = evt.currentTarget;
+	ind = parseInt(tr.getAttribute("dataInd"));
 	if (!isNaN(ind) && ind >= 0 && ind < data.length) {
+		tdname = tr.getElementsByClassName("tdname").item(0);
+		ss = document.querySelector("#ss");
+		ss.value = tdname.innerText;
 		url = "https://boerse.dab-bank.de" + data[ind].detLink;
 		getDetails(url);
 	}
@@ -242,4 +238,41 @@ function createPopupResultList(sc) {
 		}
 	});
 	return list;
+}
+
+function addOnClick(evt) {
+	var ss = document.querySelector("#ss");
+	var selEx = document.querySelector("#exchangeSelect");
+	var sOpt = selEx.selectedOptions.item(0);
+	if (!sOpt) {
+		alert("Nothing to add, cancel");
+		return;
+	}
+	var period = document.querySelector("#cPeriod");
+	var opTable = document.querySelector("#curOpts");
+	var tr = document.createElement("tr");
+	tr.setAttribute("cId", sOpt.value);
+	// name
+	var td = document.createElement("td");
+	td.innerText = ss.value;
+	td.className = "tdname";
+	tr.appendChild(td);
+	// stock exchange
+	td = document.createElement("td");
+	td.innerText = sOpt.innerText;
+	td.className = "tdstex";
+	tr.appendChild(td);
+	// period
+	td = document.createElement("td");
+	td.innerText = period.selectedOptions.item(0).value;
+	td.className = "tdper";
+	tr.appendChild(td);
+
+	tr.addEventListener("click", coOnClick);
+	opTable.appendChild(tr);
+}
+
+function liOnClick(evt) {
+	var url, ind, tdname, ss;
+	var tr = evt.currentTarget;
 }

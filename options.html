@@ -1,86 +1,95 @@
 <!doctype html>
 <html>
 <head>
-  <script src="options.js"></script>
-<style>
-.main {
-  display: flex;
-  min-height: 98vh;
-  flex-direction: column;
-}
-
-.content-container {
-  display: flex;
-  flex: 1;
-}
-.content {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-.navigator {
-  display: flex;
-  flex-direction: column;
-  align-content: stretch;
-  flex: 0 0 11.5em;
-  order: -1;
-  border-width: 1px;
-  border-color: black;
-  border-right-style: solid;
-}
-.header {
-  min-height: 2em;
-}
-.searchResultItem {
-  cursor: pointer;
-}
-#popupResList {
-	position: absolute;
-	max-width: 50em;
-	min-width: 30em;
-	max-height: 20em;
-	min-height: 1.0em;
-	background-color: #f0f8ff;
-	border-style: solid;
-    border-width: 1px;
-	overflow-y: auto;
-	display: flex;
-	align-items: stretch;
-}
-.prt {
-	background-color:#D0F5A9;
-	border-collapse: collapse;
-	border-style: none;
-}
-td {
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	padding-left: 15px;
-	padding-right: 15px;
-}
-tr.odd {
-	background-color: white;
-}
-</style>
+	<script src="options.js"></script>
+	<style>
+		.main {
+			display: flex;
+			min-height: 98vh;
+			flex-direction: column;
+		}
+		
+		.header {
+			display:flex;
+			align-items: baseline;
+		}
+		
+		.content {
+			display: flex;
+			flex: 1;
+		}
+		#curOpts {
+			border-collapse: collapse;
+			border-style: solid;
+			width:100%;
+		}
+		
+		#popupResList {
+			position: absolute;
+			min-width: 30em;
+			max-height: 20em;
+			min-height: 1.0em;
+			background-color: #f0f8ff;
+			border-style: solid;
+			border-width: 1px;
+			overflow-y: auto;
+			display: flex;
+			flex-direction: row;
+			align-content: stretch;
+		}
+		.prt {
+			border-collapse: collapse;
+			border-style: none;
+		}
+		.prt td {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			padding-left: 15px;
+			padding-right: 15px;
+		}
+		.prt tr.odd {
+			background-color: white;
+		}
+		.searchResultItem {
+			cursor: pointer;
+		}
+	</style>
 </head>
 <body class="main">
-  <div class="header"><center style="font-size:2em;">Settings</center></div>
-  <div class="content-container">
-    <div class="content">
-		<textarea id="resp" style="width:100%;height:30vh;"></textarea>
-		<ul id="resList">
-		</ul>
+	<div class="header">
+		<span>Stock name/ISIN</span>
+		<input type="text" id="ss" size="16" placeholder="Search word"/>
+		<input type="button" id="sb" value="S"/>
+		<span>Stock exchange</span>
+		<select id="exchangeSelect" style="min-width: 12em;">
+		</select>
+		<span>Period</span>
+		<select id="cPeriod" style="min-width: 12em;">
+			<option value="INTRADAY">
+				Intraday
+			</option>
+			<option value="5Di">
+				5 Days
+			</option>
+			<option value="BOTH">
+				Intraday/5 Days
+			</option>
+		</select>
+		<input type="button" id="add" value="Add"/>
 	</div>
-    <div class="navigator">
-	  Stock name/ISIN<br>
-	  <div id="sc" style="display: flex;justify-content: space-between;">
-	  <input type="text" id="ss" size="16"></input>
-	  <input type="button" id="sb" value="S"/>
-	  </div>
-	  Stock exchange<br>
-	  <select id="exchangeSelect">
-	  </select>
-	<div>
-  </div>
+	<hr>
+	<div class="content">
+		<table id="curOpts">
+			<thead>
+				<tr>
+					<th>Stock</th>
+					<th>Stock exchange</th>
+					<th>Period</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+	</div>
 </body></html>

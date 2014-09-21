@@ -36,30 +36,28 @@
 }
 #popupResList {
 	position: absolute;
-	width: 500px;
-	height: 300px;
+	max-width: 50em;
+	min-width: 30em;
+	max-height: 20em;
+	min-height: 1.50em;
 	background-color: #f0f8ff;
 	border-style: solid;
     border-width: 1px;
 	overflow-y: auto;
-	overflow-x: hidden;
+	display: flex;
+	align-items: stretch;
 }
 .prt {
-	width: 100%;
+	background-color:#D0F5A9;
+	border-collapse: collapse;
+	border-style: none;
 }
-.tdname {
-	width: 50%;
-}
-.tdwkn {
-	width: 20%;
-}
-.tdisin {
-	width: 30%;
-}
-.prt td {
+td {
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+	padding-left: 15px;
+	padding-right: 15px;
 }
 tr.odd {
 	background-color: white;

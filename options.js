@@ -1,9 +1,12 @@
 var oReq, data;
 
 document.addEventListener("readystatechange", function () {
+	var ss;
 	if (document.readyState ==="complete") {
 		document.getElementById("sb").addEventListener("click", sbOnClick);
-		document.getElementById("ss").addEventListener("keydown", ssOnKeyDown);
+		ss = document.getElementById("ss");
+		ss.addEventListener("keydown", ssOnKeyDown);
+		ss.focus();
     }
 });
 
@@ -15,11 +18,21 @@ function ssOnKeyDown(evt) {
 	if (evt.keyCode === 13) {
 		searchStock();
 	}
+	else if (evt.keyCode == 27) { // ESC
+		var list = document.querySelector("#popupResList");
+		if (list) {
+			list.remove();
+		}
+	}
 }
 
 function searchStock() {
-	document.getElementById("resp").value = "";
 	var params, stock = document.getElementById("ss").value;
+	var list = document.querySelector("#popupResList");
+	if (list) {
+		list.remove();
+	}
+	document.getElementById("resp").value = "";
 	if (stock) {
 		stock = stock.trim();
 		if (stock != "") {
@@ -60,6 +73,7 @@ function reqListener () {
 		sc = document.getElementById("ss");
 		list = createPopupResultList(sc);
 		fillResultList(data, list);
+		list.focus();
 	}
 	else {
 		alert("Result table not found");
@@ -170,10 +184,11 @@ function getDetails(url) {
 }
 
 function detListener() {
-	var table, tr, cell, list, selEx, sel = getElement(this.responseText, "select#exchangeSelect");
+	var ss, table, tr, cell, list, selEx, sel = getElement(this.responseText, "select#exchangeSelect");
 	if (sel) {
 		selEx = document.querySelector("#exchangeSelect");
 		selEx.innerHTML = sel.innerHTML;
+		selEx.focus();
 	}
 	else {
 //		table = getElement(this.responseText, "table#factsheet_prices_table");	
@@ -182,6 +197,8 @@ function detListener() {
 //			cell = tr.getElementsByClassName("factsheet_price_columnValue").item(0);
 //		}
 		alert("Not imlemented yet");
+		ss = document.querySelector("#ss");
+		ss.focus();
 	}
 	list = document.querySelector("#popupResList");
 	list.remove();
@@ -218,6 +235,10 @@ function createPopupResultList(sc) {
 	list.addEventListener("keydown", function(evt) {
 		if (evt.keyCode == 27) { // ESC
 			list.remove();
+			var ss = document.querySelector("#ss");
+			if (ss) {
+				ss.focus();
+			}
 		}
 	});
 	return list;

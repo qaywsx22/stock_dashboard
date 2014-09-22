@@ -8,6 +8,7 @@ document.addEventListener("readystatechange", function () {
 		el.addEventListener("keydown", ssOnKeyDown);
 		el.focus();
 		document.getElementById("add").addEventListener("click", addOnClick);
+		document.getElementById("clear").addEventListener("click", clear);
     }
 });
 
@@ -36,7 +37,6 @@ function searchStock() {
 	if (stock) {
 		stock = stock.trim();
 		if (stock != "") {
-//			alert("Value "+stock+" found.");
 			params="searchValue="+stock;
 			params+="&offset=0&blocksize=20&sort=&sortDir=&sortField=&idCategory=";
 			console.log("params="+params);
@@ -130,22 +130,19 @@ function fillResultList(data, list) {
 	var tr;
 	var td;
 	var table;
+	var tdspan;
 	if (data && list) {
 		table = list.getElementsByClassName("prt").item(0);
 		data.forEach(function (elem, ind, arr) {
-//			inte = "" + elem.name + " | " + elem.wkn + " | " + elem.isin;
-//			li = document.createElement("li");
-//			li.setAttribute("dataInd", ind);
-//			li.setAttribute("class", "searchResultItem");
-//			li.innerText = inte;
-//			list.appendChild(li);
-//			li.addEventListener("click", liOnClick);
 			tr = document.createElement("tr");
 			tr.className = (ind % 2 === 0 ? "even" : "odd");
 			tr.setAttribute("dataInd", ind);
 			// name
 			td = document.createElement("td");
-			td.innerText = elem.name;
+			tdspan = document.createElement("span");
+			tdspan.innerText = elem.name;
+			tdspan.className = "tdspan";
+			td.appendChild(tdspan);
 			td.className = "tdname";
 			tr.appendChild(td);
 			// wkn
@@ -160,8 +157,12 @@ function fillResultList(data, list) {
 			tr.appendChild(td);
 			tr.addEventListener("click", liOnClick);
 			table.appendChild(tr);
+			if (tdspan.offsetWidth < tdspan.scrollWidth) {
+				tr.cells.item(0).title = tdspan.innerText;
+			}
 		});
 	}
+	updatePrlSelection(list, (table.rows.length > 0 ? 0 : null));
 }
 
 function getDetails(url) {
@@ -228,15 +229,7 @@ function createPopupResultList(sc) {
 	table.className = "prt";
 	list.appendChild(table);
 	sc.offsetParent.appendChild(list);
-	list.addEventListener("keydown", function(evt) {
-		if (evt.keyCode == 27) { // ESC
-			list.remove();
-			var ss = document.querySelector("#ss");
-			if (ss) {
-				ss.focus();
-			}
-		}
-	});
+	list.addEventListener("keydown", prlOnKeyDown);
 	return list;
 }
 
@@ -272,7 +265,103 @@ function addOnClick(evt) {
 	opTable.appendChild(tr);
 }
 
-function liOnClick(evt) {
+function coOnClick(evt) {
 	var url, ind, tdname, ss;
 	var tr = evt.currentTarget;
+}
+
+function clear(evt) {
+	var ss = document.querySelector("#ss");
+	ss.value = "";
+	ss.focus();
+	var selEx = document.querySelector("#exchangeSelect");
+	selEx.innerHTML = "";
+	var period = document.querySelector("#cPeriod");
+	period.item(0).selected = true;
+}
+
+function prlOnKeyDown(evt) {
+	var list = evt.currentTarget;
+	var table = list.getElementsByClassName("prt").item(0);
+	var tr;
+	var ind;
+	var tdname;
+	var ss;
+	var url;
+	var si = parseInt(list.getAttribute("selInd"));
+	if (isNaN(si)) {
+		si = null;
+	}
+	if (evt.keyCode == 27) { // ESC
+		list.remove();
+		var ss = document.querySelector("#ss");
+		if (ss) {
+			ss.focus();
+		}
+	}
+	else if (evt.keyCode == 40) { // arrow down
+		if (si != null) {
+			si++;
+			if (si >= table.rows.length) {
+				si = table.rows.length - 1;
+			}
+		}
+		else if (table.rows.length > 0) {
+			si = 0;
+		}
+		updatePrlSelection(list, si);
+	}
+	else if (evt.keyCode == 38) { // arrow up
+		if (si != null) {
+			si--;
+			if (si < 0) {
+				si = 0;
+			}
+		}
+		else if (table.rows.length > 0) {
+			si = 0;
+		}
+		updatePrlSelection(list, si);
+	}
+	else if (evt.keyCode == 36) { // home
+	}
+	else if (evt.keyCode == 35) { // end
+	}
+	else if (evt.keyCode == 34) { // page down
+	}
+	else if (evt.keyCode == 33) { // page up
+	}
+	else if (evt.keyCode == 13 && data && si >= 0 && si < table.rows.length) { // enter
+		tr = table.rows.item(si);
+		ind = parseInt(tr.getAttribute("dataInd"));
+		if (!isNaN(ind) && ind >= 0 && ind < data.length) {
+			tdname = tr.getElementsByClassName("tdname").item(0);
+			ss = document.querySelector("#ss");
+			ss.value = tdname.innerText;
+			url = "https://boerse.dab-bank.de" + data[ind].detLink;
+			getDetails(url);
+		}
+	}
+}
+
+function updatePrlSelection(list, si) {
+	var oldSelInd = parseInt(list.getAttribute("selInd"));
+	var table = list.getElementsByClassName("prt").item(0);
+	var tr;
+	if (!isNaN(oldSelInd) && oldSelInd < table.rows.length) {
+		tr = table.rows.item(oldSelInd);
+		var re = /(selected)/gi;
+		if (tr.className) {
+			tr.className = tr.className.replace(re, "");
+			tr.className.trim();
+		}
+	}
+	if (si == null) {
+		list.removeAttribute("selInd");
+	}
+	else if (si >= 0 && si < table.rows.length) {
+		list.setAttribute("selInd", si.toString());
+		tr = table.rows.item(si);
+		tr.className += " selected";
+	}
 }

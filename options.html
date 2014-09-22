@@ -23,10 +23,13 @@
 			border-style: solid;
 			width:100%;
 		}
+		#curOpts th, td {
+			text-align: left;
+		}
 		
 		#popupResList {
 			position: absolute;
-			min-width: 30em;
+			min-width: 20em;
 			max-height: 20em;
 			min-height: 1.0em;
 			background-color: #f0f8ff;
@@ -43,17 +46,26 @@
 		}
 		.prt td {
 			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
 			padding-left: 15px;
 			padding-right: 15px;
 		}
 		.prt tr.odd {
 			background-color: white;
 		}
+		.prt tr.selected {
+			background-color: #FFFF00;
+		}
 		.searchResultItem {
 			cursor: pointer;
 		}
+		.tdspan {
+			max-width: 20em;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			display: block;
+		}
+		
 	</style>
 </head>
 <body class="main">
@@ -77,6 +89,7 @@
 			</option>
 		</select>
 		<input type="button" id="add" value="Add"/>
+		<input type="button" id="clear" value="Clear"/>
 	</div>
 	<hr>
 	<div class="content">

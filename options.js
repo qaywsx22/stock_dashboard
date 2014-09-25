@@ -9,6 +9,10 @@ document.addEventListener("readystatechange", function () {
 		el.focus();
 		document.getElementById("add").addEventListener("click", addOnClick);
 		document.getElementById("clear").addEventListener("click", clear);
+		document.getElementById("exchangeSelect").addEventListener("keydown", selOnKeyDown);
+		document.getElementById("cPeriod").addEventListener("keydown", selOnKeyDown);
+		document.getElementById("save").addEventListener("click", saveOnClick);
+		document.getElementById("load").addEventListener("click", loadOnClick);
     }
 });
 
@@ -25,6 +29,7 @@ function ssOnKeyDown(evt) {
 		if (list) {
 			list.remove();
 		}
+		evt.currentTarget.value = "";
 	}
 }
 
@@ -110,12 +115,12 @@ function extractStockData(div) {
 	for (i=0; i < rows.length; i++) {
 		row = rows.item(i);
 		text = row.cells.item(indISIN).innerText.trim().replace(/\s/g, " ");
-		wkn = text.substring(0, text.indexOf(" ")).trim();
+//		wkn = text.substring(0, text.indexOf(" ")).trim();
 		isin = text.substring(text.indexOf(" ") + 1).trim();
 		frag = fragmentFromString(row.cells.item(indName).innerHTML);
 		detLink = frag.querySelector("a").getAttribute("href");
 		temp = { name: row.cells.item(indName).innerText.trim(),
-				  wkn: wkn,
+//				  wkn: wkn,
 				  isin: isin,
 				  detLink: detLink
 				};
@@ -145,11 +150,11 @@ function fillResultList(data, list) {
 			td.appendChild(tdspan);
 			td.className = "tdname";
 			tr.appendChild(td);
-			// wkn
-			td = document.createElement("td");
-			td.innerText = elem.wkn;
-			td.className = "tdwkn";
-			tr.appendChild(td);
+//			// wkn
+//			td = document.createElement("td");
+//			td.innerText = elem.wkn;
+//			td.className = "tdwkn";
+//			tr.appendChild(td);
 			// isin
 			td = document.createElement("td");
 			td.innerText = elem.isin;
@@ -310,6 +315,8 @@ function prlOnKeyDown(evt) {
 			si = 0;
 		}
 		updatePrlSelection(list, si);
+		moveSelectionInViewport(list, si);
+		evt.preventDefault();
 	}
 	else if (evt.keyCode == 38) { // arrow up
 		if (si != null) {
@@ -322,6 +329,8 @@ function prlOnKeyDown(evt) {
 			si = 0;
 		}
 		updatePrlSelection(list, si);
+		moveSelectionInViewport(list, si);
+		evt.preventDefault();
 	}
 	else if (evt.keyCode == 36) { // home
 	}
@@ -365,3 +374,44 @@ function updatePrlSelection(list, si) {
 		tr.className += " selected";
 	}
 }
+
+function moveSelectionInViewport(list, ind) {
+	if (isNaN(ind) || list == null) {
+		return;
+	}
+	var table = list.getElementsByClassName("prt").item(0);
+	var tr;
+	if (ind >= 0 && ind < table.rows.length) {
+		tr = table.rows.item(ind);
+		var y = tr.offsetTop;
+		var top = list.clientTop + list.scrollTop;
+		var bottom = top + list.clientHeight;
+		if (y < top) {
+			list.scrollTop = y;
+		}
+		else if (y + tr.offsetHeight > bottom) {
+			list.scrollTop = y + tr.offsetHeight - list.clientHeight+list.clientTop;
+		}
+	}
+}
+
+function selOnKeyDown(evt) {
+	var elem = evt.currentTarget;
+	if (evt.keyCode == 27) { // ESC
+		clear();
+		evt.preventDefault();
+	}
+	else if (evt.keyCode == 13) { // enter
+		addOnClick(evt);
+		evt.preventDefault();
+	}
+}
+
+function saveOnClick(evt) {
+	alert("Options will be saved");
+}
+
+function loadOnClick(evt) {
+	alert("Options will be loaded");
+}
+

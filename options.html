@@ -12,16 +12,50 @@
 		.header {
 			display:flex;
 			align-items: baseline;
+			margin-top: 3em;
 		}
-		
+
+		#sb {
+			margin-left: -3px;
+			margin-right: 30px;
+		}
+		#ss {
+			margin-left: 5px;
+		}
+		#exchangeSelect {
+			margin-left: 5px;
+			margin-right: 30px;
+			min-width: 12em;			
+		}
+		#cPeriod {
+			margin-left: 5px;
+			margin-right: 30px;
+			min-width: 12em;
+		}
+
 		.content {
 			display: flex;
 			flex: 1;
+			margin-top: 3em;
 		}
 		#curOpts {
 			border-collapse: collapse;
-			border-style: solid;
+			border-style: none;
 			width:100%;
+		}
+		#curOpts tr {
+			border-top-style: solid;
+			border-top-width: 2em;
+			border-top-color: transparent;
+		}
+		#curOpts theads tr {
+			border-top-style: none;
+		}
+		#curOpts thead {
+			border-bottom: 5em;
+			border-bottom-style: solid;
+			border-bottom-width: 2em;
+			border-bottom-color: transparent;
 		}
 		#curOpts th, td {
 			text-align: left;
@@ -74,10 +108,10 @@
 		<input type="text" id="ss" size="16" placeholder="Search word"/>
 		<input type="button" id="sb" value="S"/>
 		<span>Stock exchange</span>
-		<select id="exchangeSelect" style="min-width: 12em;">
+		<select id="exchangeSelect">
 		</select>
 		<span>Period</span>
-		<select id="cPeriod" style="min-width: 12em;">
+		<select id="cPeriod">
 			<option value="INTRADAY">
 				Intraday
 			</option>
@@ -90,6 +124,8 @@
 		</select>
 		<input type="button" id="add" value="Add"/>
 		<input type="button" id="clear" value="Clear"/>
+		<input type="button" id="save" value="Save"/>
+		<input type="button" id="load" value="Load"/>
 	</div>
 	<hr>
 	<div class="content">
@@ -101,8 +137,6 @@
 					<th>Period</th>
 				</tr>
 			</thead>
-			<tbody>
-			</tbody>
 		</table>
 	</div>
 </body></html>

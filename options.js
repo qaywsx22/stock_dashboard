@@ -1,4 +1,7 @@
-var oReq, data;
+var oReq, data, searchFlag = false;
+var suggestTimer = null;
+var aTools = new Array('STO', 'IND', 'FUN', 'BON', 'SFD', 'CUR', 'MET', 'COM',
+		'FUT', 'DAB');
 
 document.addEventListener("readystatechange", function () {
 	var el;
@@ -6,6 +9,7 @@ document.addEventListener("readystatechange", function () {
 		document.getElementById("sb").addEventListener("click", sbOnClick);
 		el = document.getElementById("ss");
 		el.addEventListener("keydown", ssOnKeyDown);
+		el.addEventListener("input", ssOnInput);
 		el.focus();
 		document.getElementById("add").addEventListener("click", addOnClick);
 		document.getElementById("clear").addEventListener("click", clear);
@@ -22,14 +26,88 @@ function sbOnClick(evt) {
 
 function ssOnKeyDown(evt) {
 	if (evt.keyCode === 13) {
+		if (suggestTimer != null) {
+			window.clearTimeout(suggestTimer);
+			suggestTimer = null;
+		}
+		searchFlag = true;
 		searchStock();
 	}
 	else if (evt.keyCode == 27) { // ESC
+		if (suggestTimer != null) {
+			window.clearTimeout(suggestTimer);
+			suggestTimer = null;
+		}
 		var list = document.querySelector("#popupResList");
 		if (list) {
 			list.remove();
 		}
 		evt.currentTarget.value = "";
+	}
+}
+
+function ssOnInput(evt) {
+	if (suggestTimer != null) {
+		window.clearTimeout(suggestTimer);
+		suggestTimer = null;
+	}
+	if (evt.currentTarget.value != null && evt.currentTarget.value != "") {
+		suggestTimer = window.setTimeout(getSuggest, 200);
+	}
+}
+
+function getSuggest() {
+	var url, stock = document.getElementById("ss").value;
+	if (!searchFlag && stock) {
+		stock = stock.trim();
+		if (stock != "") {
+			url="https://boerse.dab-bank.de/maerkte-kurse/ajax/autosuggest.htm?SEARCH_VALUE="+encodeURIComponent(stock);
+			if (oReq == null) {
+				oReq = new XMLHttpRequest();
+			}
+			oReq.onload = suggestListener;
+			oReq.open("get", url);
+			oReq.setRequestHeader("Accept", "text/html");
+			oReq.setRequestHeader("Pragma", "no-cache");
+			oReq.setRequestHeader("Cache-Control", "no-cache");
+			oReq.send();
+		}
+	}
+}
+
+function suggestListener() {
+	var d = new Array();
+	for (i = 0; i < aTools.length; i++) {
+		d[aTools[i]] = new Array();
+	}
+	if (typeof (s) == "undefined" || s == null) {
+		var s = new Array();
+	}
+	if (s['STO'] == null)
+		s['STO'] = new Array();
+	if (s['BON'] == null)
+		s['BON'] = new Array();
+	if (s['FUN'] == null)
+		s['FUN'] = new Array();
+	if (s['IND'] == null)
+		s['IND'] = new Array();
+	if (s['COM'] == null)
+		s['COM'] = new Array();
+	if (s['MET'] == null)
+		s['MET'] = new Array();
+	if (s['CUR'] == null)
+		s['CUR'] = new Array();
+	if (s['FUT'] == null)
+		s['FUT'] = new Array();
+	if (s['BON'] == null)
+		s['BON'] = new Array();
+	if (s['DAB'] == null)
+		s['DAB'] = new Array();
+	if (s['SFD'] == null)
+		s['SFD'] = new Array();
+	var aInput = this.responseText;
+	if (!(aInput == undefined)) {
+		eval(aInput);
 	}
 }
 
@@ -75,6 +153,7 @@ function reqListener () {
 	else {
 		alert("Result table not found");
 	}
+	searchFlag = false;
 }
 
 function fragmentFromString(strHTML) {

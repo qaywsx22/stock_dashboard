@@ -1,7 +1,5 @@
-var oReq, data, searchFlag = false;
+var oReq, data, sData, searchFlag = false;
 var suggestTimer = null;
-var aTools = new Array('STO', 'IND', 'FUN', 'BON', 'SFD', 'CUR', 'MET', 'COM',
-		'FUT', 'DAB');
 
 document.addEventListener("readystatechange", function () {
 	var el;
@@ -76,39 +74,54 @@ function getSuggest() {
 }
 
 function suggestListener() {
-	var d = new Array();
-	for (i = 0; i < aTools.length; i++) {
-		d[aTools[i]] = new Array();
-	}
-	if (typeof (s) == "undefined" || s == null) {
-		var s = new Array();
-	}
-	if (s['STO'] == null)
-		s['STO'] = new Array();
-	if (s['BON'] == null)
-		s['BON'] = new Array();
-	if (s['FUN'] == null)
-		s['FUN'] = new Array();
-	if (s['IND'] == null)
-		s['IND'] = new Array();
-	if (s['COM'] == null)
-		s['COM'] = new Array();
-	if (s['MET'] == null)
-		s['MET'] = new Array();
-	if (s['CUR'] == null)
-		s['CUR'] = new Array();
-	if (s['FUT'] == null)
-		s['FUT'] = new Array();
-	if (s['BON'] == null)
-		s['BON'] = new Array();
-	if (s['DAB'] == null)
-		s['DAB'] = new Array();
-	if (s['SFD'] == null)
-		s['SFD'] = new Array();
+	var re, match, res, d = null;
 	var aInput = this.responseText;
-	if (!(aInput == undefined)) {
-		eval(aInput);
+	sData = null;
+	if (!!aInput) {
+		re = /.*d\['STO'\]=new Array\(([^()]*)\);/g;
+		match = re.exec(aInput);
+		res = match[1];
+		d = res.split("','");
+		if (d.length > 2) {
+			d[0] = d[0].replace(/'/, "");
+			d[d.length - 1] = d[d.length - 1].replace(/'/, "");
+		}
+		sData = extractSuggestData(d);
 	}
+	if (sData) {
+		showSuggestPopup();
+	}
+}
+
+function extractSuggestData(arr) {
+	if (!arr || arr.length < 3) {
+		return null;
+	}
+	var i, isin;
+	var sLink = "/maerkte-kurse/redirect/redirect.action?redirectUrl=http%3A//boerse.dab-bank.de/maerkte-kurse/wertpapiersuche/isin_";
+	var nData = new Array();
+	for (i=0; i<arr.length; i=i+3) {
+		temp = { name: arr[i].trim(),
+				  isin: arr[i+2].trim(),
+				  detLink: sLink
+				};
+		temp.detLink += temp.isin;
+		nData.push(temp);
+	}
+	return nData;
+}
+
+function showSuggestPopup() {
+	if (!sData) {
+		return;
+	}
+	var sc = document.getElementById("ss");
+	var list = document.querySelector("#popupResList");
+	if (list) {
+		list.remove();
+	}
+	list = createPopupResultList(sc, list);
+	fillResultList(sData, list);
 }
 
 function searchStock() {
@@ -217,6 +230,10 @@ function fillResultList(data, list) {
 	var tdspan;
 	if (data && list) {
 		table = list.getElementsByClassName("prt").item(0);
+		while (table.rows.length > 0) {
+			table.rows.item(table.rows.length - 1).removeEventListener("click", liOnClick);
+			table.deleteRow(-1);
+		}
 		data.forEach(function (elem, ind, arr) {
 			tr = document.createElement("tr");
 			tr.className = (ind % 2 === 0 ? "even" : "odd");
@@ -285,11 +302,12 @@ function liOnClick(evt) {
 	var url, ind, tr, tdname, ss;
 	tr = evt.currentTarget;
 	ind = parseInt(tr.getAttribute("dataInd"));
-	if (!isNaN(ind) && ind >= 0 && ind < data.length) {
+	var dat = sData || data;
+	if (!isNaN(ind) && ind >= 0 && ind < dat.length) {
 		tdname = tr.getElementsByClassName("tdname").item(0);
 		ss = document.querySelector("#ss");
 		ss.value = tdname.innerText;
-		url = "https://boerse.dab-bank.de" + data[ind].detLink;
+		url = "https://boerse.dab-bank.de" + dat[ind].detLink;
 		getDetails(url);
 	}
 }
@@ -303,8 +321,8 @@ function getElement(htmlText, selector) {
 	return null;
 }
 
-function createPopupResultList(sc) {
-	var table, list = document.createElement("div");
+function createPopupResultList(sc, aList) {
+	var table, list = aList || document.createElement("div");
 	list.style.left = "" + sc.offsetLeft + "px";
 	list.style.top = "" + (sc.offsetTop + sc.offsetHeight) + "px";
 	list.id = "popupResList";
@@ -313,6 +331,7 @@ function createPopupResultList(sc) {
 	table.className = "prt";
 	list.appendChild(table);
 	sc.offsetParent.appendChild(list);
+	list.removeEventListener("keydown", prlOnKeyDown);
 	list.addEventListener("keydown", prlOnKeyDown);
 	return list;
 }

@@ -1,4 +1,4 @@
-var oReq, data, sData, searchFlag = false;
+var oReq, data;
 var suggestTimer = null;
 
 document.addEventListener("readystatechange", function () {
@@ -23,12 +23,19 @@ function sbOnClick(evt) {
 }
 
 function ssOnKeyDown(evt) {
+	var table, si, list = document.querySelector("#popupResList");
+	if (!!list) {
+		table = list.getElementsByClassName("prt").item(0);
+		si = parseInt(list.getAttribute("selInd"));
+		if (isNaN(si)) {
+			si = null;
+		}
+	}
 	if (evt.keyCode === 13) {
 		if (suggestTimer != null) {
 			window.clearTimeout(suggestTimer);
 			suggestTimer = null;
 		}
-		searchFlag = true;
 		searchStock();
 	}
 	else if (evt.keyCode == 27) { // ESC
@@ -36,11 +43,54 @@ function ssOnKeyDown(evt) {
 			window.clearTimeout(suggestTimer);
 			suggestTimer = null;
 		}
-		var list = document.querySelector("#popupResList");
 		if (list) {
+			while (!!table && table.rows.length > 0) {
+				table.rows.item(table.rows.length - 1).removeEventListener("click", liOnClick);
+				table.deleteRow(-1);
+			}
 			list.remove();
 		}
 		evt.currentTarget.value = "";
+	}
+	else if (evt.keyCode == 40) { // arrow down
+		if (!!table && table.rows.length > 0) {
+			if (si != null) {
+				si++;
+				if (si >= table.rows.length) {
+					si = table.rows.length - 1;
+				}
+			}
+			else if (table.rows.length > 0) {
+				si = 0;
+			}
+			updatePrlSelection(list, si);
+			moveSelectionInViewport(list, si);
+			evt.preventDefault();
+		}
+	}
+	else if (evt.keyCode == 38) { // arrow up
+		if (!!table && table.rows.length > 0) {
+			if (si != null) {
+				si--;
+				if (si < 0) {
+					si = 0;
+				}
+			}
+			else if (table.rows.length > 0) {
+				si = 0;
+			}
+			updatePrlSelection(list, si);
+			moveSelectionInViewport(list, si);
+			evt.preventDefault();
+		}
+	}
+	else if (evt.keyCode == 36) { // home
+	}
+	else if (evt.keyCode == 35) { // end
+	}
+	else if (evt.keyCode == 34) { // page down
+	}
+	else if (evt.keyCode == 33) { // page up
 	}
 }
 
@@ -56,7 +106,7 @@ function ssOnInput(evt) {
 
 function getSuggest() {
 	var url, stock = document.getElementById("ss").value;
-	if (!searchFlag && stock) {
+	if (stock) {
 		stock = stock.trim();
 		if (stock != "") {
 			url="https://boerse.dab-bank.de/maerkte-kurse/ajax/autosuggest.htm?SEARCH_VALUE="+encodeURIComponent(stock);
@@ -75,21 +125,35 @@ function getSuggest() {
 
 function suggestListener() {
 	var re, match, res, d = null;
+	var table, list;
 	var aInput = this.responseText;
-	sData = null;
+	data = null;
 	if (!!aInput) {
-		re = /.*d\['STO'\]=new Array\(([^()]*)\);/g;
+		re = /.*d\['STO'\]=new Array\((.*)\);d\['BON'\].*/g;
 		match = re.exec(aInput);
-		res = match[1];
-		d = res.split("','");
-		if (d.length > 2) {
-			d[0] = d[0].replace(/'/, "");
-			d[d.length - 1] = d[d.length - 1].replace(/'/, "");
+		if (!!match) {
+			res = match[1];
+			d = res.split("','");
+			if (d.length > 2) {
+				d[0] = d[0].replace(/'/, "");
+				d[d.length - 1] = d[d.length - 1].replace(/'/, "");
+			}
+			data = extractSuggestData(d);
 		}
-		sData = extractSuggestData(d);
 	}
-	if (sData) {
+	if (data) {
 		showSuggestPopup();
+	}
+	else {
+		list = document.querySelector("#popupResList");
+		if (list) {
+			table = list.getElementsByClassName("prt").item(0);
+			while (!!table && table.rows.length > 0) {
+				table.rows.item(table.rows.length - 1).removeEventListener("click", liOnClick);
+				table.deleteRow(-1);
+			}
+			list.remove();
+		}
 	}
 }
 
@@ -98,21 +162,22 @@ function extractSuggestData(arr) {
 		return null;
 	}
 	var i, isin;
-	var sLink = "/maerkte-kurse/redirect/redirect.action?redirectUrl=http%3A//boerse.dab-bank.de/maerkte-kurse/wertpapiersuche/isin_";
+	var stock = document.getElementById("ss").value;
+	var sLink = "/maerkte-kurse/redirect/redirect.action?redirectUrl=https%3A//boerse.dab-bank.de/maerkte-kurse/wertpapiersuche/isin_";
 	var nData = new Array();
 	for (i=0; i<arr.length; i=i+3) {
 		temp = { name: arr[i].trim(),
 				  isin: arr[i+2].trim(),
 				  detLink: sLink
 				};
-		temp.detLink += temp.isin;
+		temp.detLink += temp.isin + ".html";
 		nData.push(temp);
 	}
 	return nData;
 }
 
 function showSuggestPopup() {
-	if (!sData) {
+	if (!data) {
 		return;
 	}
 	var sc = document.getElementById("ss");
@@ -121,104 +186,41 @@ function showSuggestPopup() {
 		list.remove();
 	}
 	list = createPopupResultList(sc, list);
-	fillResultList(sData, list);
+	fillResultList(data, list);
 }
 
 function searchStock() {
-	var params, stock = document.getElementById("ss").value;
 	var list = document.querySelector("#popupResList");
-	if (list) {
-		list.remove();
+	if (!list) {
+		return;
 	}
-	if (stock) {
-		stock = stock.trim();
-		if (stock != "") {
-			params="searchValue="+stock;
-			params+="&offset=0&blocksize=20&sort=&sortDir=&sortField=&idCategory=";
-			console.log("params="+params);
-			if (oReq == null) {
-				oReq = new XMLHttpRequest();
-			}
-			oReq.onload = reqListener;
-			oReq.open("post", "https://boerse.dab-bank.de/maerkte-kurse/ajax/stocks/search/results.html");
-			oReq.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-//			oReq.setRequestHeader("Content-length", params.length);
-//			oReq.setRequestHeader("Connection", "close");
-			oReq.send(params);
+	var table = list.getElementsByClassName("prt").item(0);
+	var tr;
+	var ind;
+	var tdname;
+	var ss;
+	var url;
+	var si = parseInt(list.getAttribute("selInd"));
+	if (isNaN(si)) {
+		si = null;
+	}
+	if (data && si >= 0 && si < table.rows.length) { // enter
+		tr = table.rows.item(si);
+		ind = parseInt(tr.getAttribute("dataInd"));
+		if (!isNaN(ind) && ind >= 0 && ind < data.length) {
+			tdname = tr.getElementsByClassName("tdname").item(0);
+			ss = document.querySelector("#ss");
+			ss.value = tdname.innerText;
+			url = "https://boerse.dab-bank.de" + data[ind].detLink;
+			getDetails(url);
 		}
 	}
-}
-
-function reqListener () {
-//	console.log(this.responseText);
-	var sc, list, div, table = getElement(this.responseText, "table#instrument"),
-		list, selEx = document.querySelector("#exchangeSelect");
-	selEx.innerHTML = "";
-	if (table != null) {
-		div = document.createElement("div");
-		div.appendChild(table);
-		data = extractStockData(div);
-		sc = document.getElementById("ss");
-		list = createPopupResultList(sc);
-		fillResultList(data, list);
-		list.focus();
-	}
-	else {
-		alert("Result table not found");
-	}
-	searchFlag = false;
 }
 
 function fragmentFromString(strHTML) {
     var temp = document.createElement('template');
     temp.innerHTML = strHTML;
     return temp.content;
-}
-
-function extractStockData(div) {
-	var indName, indISIN,
-		rows, col, row,
-		temp, frag, i, c, text,
-		wkn, isin, detLink;
-	var nData = new Array();
-	frag = fragmentFromString(div.innerHTML);
-	row = frag.querySelector("thead tr");
-	if (!row) {
-		return null;
-	}
-	for (i=0; i < row.cells.length; i++) {
-		text = row.cells.item(i).innerText.trim();
-		if (text) {
-			if (text.toLowerCase() === "name") {
-				indName = i;
-			}
-			else if (text.toLowerCase().indexOf("wkn") == 0) {
-				indISIN = i;
-			}
-			if (indName >= 0 && indISIN >= 0) {
-				break;
-			}
-		}
-	}
-	if (indName == null || indISIN == null) {
-		return null;
-	}
-	rows = frag.querySelector("tbody").rows;
-	for (i=0; i < rows.length; i++) {
-		row = rows.item(i);
-		text = row.cells.item(indISIN).innerText.trim().replace(/\s/g, " ");
-//		wkn = text.substring(0, text.indexOf(" ")).trim();
-		isin = text.substring(text.indexOf(" ") + 1).trim();
-		frag = fragmentFromString(row.cells.item(indName).innerHTML);
-		detLink = frag.querySelector("a").getAttribute("href");
-		temp = { name: row.cells.item(indName).innerText.trim(),
-//				  wkn: wkn,
-				  isin: isin,
-				  detLink: detLink
-				};
-		nData.push(temp);
-	}
-	return nData;
 }
 
 function fillResultList(data, list) {
@@ -246,11 +248,6 @@ function fillResultList(data, list) {
 			td.appendChild(tdspan);
 			td.className = "tdname";
 			tr.appendChild(td);
-//			// wkn
-//			td = document.createElement("td");
-//			td.innerText = elem.wkn;
-//			td.className = "tdwkn";
-//			tr.appendChild(td);
 			// isin
 			td = document.createElement("td");
 			td.innerText = elem.isin;
@@ -273,6 +270,7 @@ function getDetails(url) {
 		}
 		oReq.onload = detListener;
 		oReq.open("get", url);
+//		oReq.setRequestHeader("Referer", "https://www.dab-bank.de/");
 		oReq.send();
 	}
 }
@@ -285,15 +283,6 @@ function detListener() {
 		selEx.innerHTML = sel.innerHTML;
 		selEx.focus();
 	}
-	else {
-//		table = getElement(this.responseText, "table#factsheet_prices_table");	
-//		if (table) {
-//			tr = table.getElementsByTagName('tr')[0];
-//			cell = tr.getElementsByClassName("factsheet_price_columnValue").item(0);
-//		}
-		alert("Not imlemented yet");
-		ss.focus();
-	}
 	list = document.querySelector("#popupResList");
 	list.remove();
 }
@@ -302,14 +291,10 @@ function liOnClick(evt) {
 	var url, ind, tr, tdname, ss;
 	tr = evt.currentTarget;
 	ind = parseInt(tr.getAttribute("dataInd"));
-	var dat = sData || data;
-	if (!isNaN(ind) && ind >= 0 && ind < dat.length) {
-		tdname = tr.getElementsByClassName("tdname").item(0);
-		ss = document.querySelector("#ss");
-		ss.value = tdname.innerText;
-		url = "https://boerse.dab-bank.de" + dat[ind].detLink;
-		getDetails(url);
-	}
+	var list = document.querySelector("#popupResList");
+	updatePrlSelection(list, ind);
+	moveSelectionInViewport(list, ind);
+	searchStock();
 }
 
 function getElement(htmlText, selector) {
@@ -331,8 +316,8 @@ function createPopupResultList(sc, aList) {
 	table.className = "prt";
 	list.appendChild(table);
 	sc.offsetParent.appendChild(list);
-	list.removeEventListener("keydown", prlOnKeyDown);
-	list.addEventListener("keydown", prlOnKeyDown);
+//	list.removeEventListener("keydown", prlOnKeyDown);
+//	list.addEventListener("keydown", prlOnKeyDown);
 	return list;
 }
 
@@ -381,74 +366,6 @@ function clear(evt) {
 	selEx.innerHTML = "";
 	var period = document.querySelector("#cPeriod");
 	period.item(0).selected = true;
-}
-
-function prlOnKeyDown(evt) {
-	var list = evt.currentTarget;
-	var table = list.getElementsByClassName("prt").item(0);
-	var tr;
-	var ind;
-	var tdname;
-	var ss;
-	var url;
-	var si = parseInt(list.getAttribute("selInd"));
-	if (isNaN(si)) {
-		si = null;
-	}
-	if (evt.keyCode == 27) { // ESC
-		list.remove();
-		var ss = document.querySelector("#ss");
-		if (ss) {
-			ss.focus();
-		}
-	}
-	else if (evt.keyCode == 40) { // arrow down
-		if (si != null) {
-			si++;
-			if (si >= table.rows.length) {
-				si = table.rows.length - 1;
-			}
-		}
-		else if (table.rows.length > 0) {
-			si = 0;
-		}
-		updatePrlSelection(list, si);
-		moveSelectionInViewport(list, si);
-		evt.preventDefault();
-	}
-	else if (evt.keyCode == 38) { // arrow up
-		if (si != null) {
-			si--;
-			if (si < 0) {
-				si = 0;
-			}
-		}
-		else if (table.rows.length > 0) {
-			si = 0;
-		}
-		updatePrlSelection(list, si);
-		moveSelectionInViewport(list, si);
-		evt.preventDefault();
-	}
-	else if (evt.keyCode == 36) { // home
-	}
-	else if (evt.keyCode == 35) { // end
-	}
-	else if (evt.keyCode == 34) { // page down
-	}
-	else if (evt.keyCode == 33) { // page up
-	}
-	else if (evt.keyCode == 13 && data && si >= 0 && si < table.rows.length) { // enter
-		tr = table.rows.item(si);
-		ind = parseInt(tr.getAttribute("dataInd"));
-		if (!isNaN(ind) && ind >= 0 && ind < data.length) {
-			tdname = tr.getElementsByClassName("tdname").item(0);
-			ss = document.querySelector("#ss");
-			ss.value = tdname.innerText;
-			url = "https://boerse.dab-bank.de" + data[ind].detLink;
-			getDetails(url);
-		}
-	}
 }
 
 function updatePrlSelection(list, si) {

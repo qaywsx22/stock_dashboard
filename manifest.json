@@ -10,7 +10,8 @@
     "default_popup": "default_popup.html"
   },
   "permissions": [
-    "https://*.dab-bank.de/*"
+    "https://*.dab-bank.de/*",
+    "http://*.dab-bank.de/*"
   ],
   "options_page": "options.html"
 }

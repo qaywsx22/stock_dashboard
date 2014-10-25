@@ -15,6 +15,7 @@ document.addEventListener("readystatechange", function () {
 		document.getElementById("cPeriod").addEventListener("keydown", selOnKeyDown);
 		document.getElementById("save").addEventListener("click", saveOnClick);
 		document.getElementById("load").addEventListener("click", loadOnClick);
+		loadOnClick(null);
     }
 });
 
@@ -331,6 +332,7 @@ function addOnClick(evt) {
 	}
 	var period = document.querySelector("#cPeriod");
 	var opTable = document.querySelector("#curOpts");
+	var obody = opTable.tBodies.item(0);
 	var tr = document.createElement("tr");
 	tr.setAttribute("cId", sOpt.value);
 	// name
@@ -350,7 +352,7 @@ function addOnClick(evt) {
 	tr.appendChild(td);
 
 	tr.addEventListener("click", coOnClick);
-	opTable.appendChild(tr);
+	obody.appendChild(tr);
 }
 
 function coOnClick(evt) {
@@ -366,6 +368,15 @@ function clear(evt) {
 	selEx.innerHTML = "";
 	var period = document.querySelector("#cPeriod");
 	period.item(0).selected = true;
+	localStorage.removeItem("DACharts.options");
+	var opTable = document.querySelector("#curOpts");
+	var obody = opTable.tBodies.item(0);
+	if (!!obody) {
+		for (i=obody.rows.length-1; i>=0;i--) {
+			obody.rows.item(i).removeEventListener("click", coOnClick);
+			obody.deleteRow(-1);
+		}
+	}
 }
 
 function updatePrlSelection(list, si) {
@@ -423,10 +434,75 @@ function selOnKeyDown(evt) {
 }
 
 function saveOnClick(evt) {
-	alert("Options will be saved");
+	var obody, str, cell, row, i, optObj, opTable = document.querySelector("#curOpts");
+	if (!opTable || opTable.rows.length == 0) {
+		return;
+	}
+	obody = opTable.tBodies.item(0);
+	var options = new Array();
+	for (i=0; i<obody.rows.length; i++) {
+		row = obody.rows.item(i);
+		optObj = { url: "https://boerse.dab-bank.de/dab-charts/charts/overview.htm"
+			, cPeriod: row.cells.item(2).innerText
+			, cType: "medium"
+			, cId: row.getAttribute("cId")
+			, cPrice_type: "last"
+			, cPerformance_axis: "false"
+			, cWith_earnings: "false"
+			, cShow_legend: "true"
+			, cSma1_days: "38"  // 38 days average
+			, cSma1_color: "f62b8a"
+			, cSma2_days: "200"  // 200 days average
+			, cSma2_color: "333333"
+			, cAbsolute_zoom: "true"
+			, cWidth: "720"  // image width (360 default)
+			, cHeight: "120"  // image height (120 default)
+			, sName: row.cells.item(0).innerText // stock name
+			, seName: row.cells.item(1).innerText // stock exchange name
+		};
+		options.push(optObj);
+	}
+	str = JSON.stringify(options);
+	localStorage.setItem("DACharts.options", str);
 }
 
 function loadOnClick(evt) {
-	alert("Options will be loaded");
+	var obody, optObj, opTable, tr, td, i, options, str = localStorage.getItem("DACharts.options");
+	if (str !== "undefined") {
+		options = JSON.parse(localStorage.getItem("DACharts.options"));
+		if (!!options && options.length > 0) {
+			opTable = document.querySelector("#curOpts");
+			obody = opTable.tBodies.item(0);
+			if (!!obody) {
+				for (i=obody.rows.length-1; i>=0;i--) {
+					obody.rows.item(i).removeEventListener("click", coOnClick);
+					obody.deleteRow(-1);
+				}
+			}
+			for (i=0; i<options.length; i++) {
+				optObj = options[i];
+				tr = document.createElement("tr");
+				tr.setAttribute("cId", optObj.cId);
+				// name
+				var td = document.createElement("td");
+				td.innerText = optObj.sName;
+				td.className = "tdname";
+				tr.appendChild(td);
+				// stock exchange
+				td = document.createElement("td");
+				td.innerText = optObj.seName;
+				td.className = "tdstex";
+				tr.appendChild(td);
+				// period
+				td = document.createElement("td");
+				td.innerText = optObj.cPeriod;
+				td.className = "tdper";
+				tr.appendChild(td);
+			
+				tr.addEventListener("click", coOnClick);
+				obody.appendChild(tr);
+			}
+		}
+	}
 }
 
